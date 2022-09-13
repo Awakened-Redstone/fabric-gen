@@ -29,7 +29,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class FXMLController implements Initializable {
     public static FXMLController INSTANCE;
@@ -165,16 +170,22 @@ public class FXMLController implements Initializable {
 
         String license = licenseTmp.toString();
 
-        /*message.setText("Downloading template");
-        UrlQuery.request("https://github.com/Awakened-Redstone/fabric-mod-template/archive/refs/heads/master.zip", (response, code) -> {
+        message.setText("Downloading template");
+        UrlQuery.requestStream("https://github.com/Awakened-Redstone/fabric-mod-template/archive/refs/heads/master.zip", (response, code) -> {
             if (code != 200) {
-                setError("Could not get the license!");
+                setError("Failed to download the template!");
                 return;
-            } else {
-                setMessage("");
             }
-            System.out.println(response);
-        });*/
+            setMessage("Decompressing template...");
+
+            try {
+                Utils.unzip(response, Path.of(System.getProperty("java.io.tmpdir"),"fabric-mod-template"));
+                setMessage("");
+            } catch (IOException e) {
+                setError("Failed to unzip template!");
+                e.printStackTrace();
+            }
+        });
 
         TemplateManager templateManager = TemplateManager.create();
         templateManager.createVelocityContext();

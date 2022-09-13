@@ -51,7 +51,7 @@
                         <ComboBox fx:id="loomVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                         <ComboBox fx:id="loaderVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                         <TextField fx:id="modVersionTextField" promptText="1.0.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                        <TextField fx:id="basePackageNameTextField" promptText="com.github.username.repository" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                        <TextField fx:id="basePackageNameTextField" promptText="com.example" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                         <TextField fx:id="archivesBaseNameTextField" promptText="example-mod" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                         <TextField fx:id="modIdTextField" promptText="examplemod" GridPane.columnIndex="1" GridPane.rowIndex="7" />
                         <TextField fx:id="modNameTextField" promptText="Example Mod" GridPane.columnIndex="1" GridPane.rowIndex="8" />

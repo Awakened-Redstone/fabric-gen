@@ -14,16 +14,13 @@ public class TemplateManager {
         return new TemplateManager();
     }
 
-    public void assertRequired() {
-        assert context != null;
-    }
-
     public void createVelocityContext() {
         context = new VelocityContext();
         context.put("StringUtils", StringUtils.class);
     }
 
     public String generateTemplate(Map<String, String> values, String template) {
+        if (context == null) createVelocityContext();
         final StringWriter stringWriter = new StringWriter();
         values.forEach((key, value) -> context.put(key, value));
 

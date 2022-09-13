@@ -5,6 +5,7 @@ import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
@@ -70,8 +71,25 @@ public class UrlQuery {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                String responseBody = Objects.requireNonNull(response.body()).string();
-                consumer.accept(responseBody, response.code());
+                consumer.accept(Objects.requireNonNull(response.body()).string(), response.code());
+            }
+
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                consumer.accept(null, -1);
+            }
+        });
+    }
+
+    public static void requestStream(String url, BiConsumer<InputStream, Integer> consumer) {
+        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
+        Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
+
+        Main.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                consumer.accept(Objects.requireNonNull(response.body()).byteStream(), response.code());
             }
 
             @Override
