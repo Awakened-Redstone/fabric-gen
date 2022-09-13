@@ -48,6 +48,20 @@ public class UrlQuery {
         });
     }
 
+    public static <T extends JsonElement> void requestJsonSync(String url, Class<T> clazz, BiConsumer<T, Integer> consumer) {
+        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
+        Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
+
+        try {
+            Response response = Main.OK_HTTP_CLIENT.newCall(request).execute();
+            String responseBody = Objects.requireNonNull(response.body()).string();
+            consumer.accept(Main.GSON.fromJson(responseBody, clazz), response.code());
+        } catch (IOException e) {
+            consumer.accept(null, -1);
+        }
+
+    }
+
     public static void request(String url, BiConsumer<String, Integer> consumer) {
         HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
