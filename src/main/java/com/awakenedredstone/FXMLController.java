@@ -14,9 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -29,12 +27,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class FXMLController implements Initializable {
     public static FXMLController INSTANCE;
@@ -45,23 +39,39 @@ public class FXMLController implements Initializable {
     public static List<String> loomVersions = new ArrayList<>();
     public static List<String> loaderVersions = new ArrayList<>();
 
-    @FXML public ComboBox<String> minecraftVersionComboBox;
-    @FXML public ComboBox<String> apiVersionComboBox;
-    @FXML public ComboBox<String> loomVersionComboBox;
-    @FXML public ComboBox<String> loaderVersionComboBox;
-    @FXML public TextField modVersionTextField;
-    @FXML public TextField basePackageNameTextField;
-    @FXML public TextField archivesBaseNameTextField;
-    @FXML public TextField modIdTextField;
-    @FXML public TextField modNameTextField;
-    @FXML public TextField mainClassNameTextField;
-    @FXML public TextField authorsTextField;
-    @FXML public TextField homepageTextField;
-    @FXML public TextField sourcesTextField;
-    @FXML public ComboBox<String> licenseComboBox;
-    @FXML public CheckBox kotlinTemplate;
+    @FXML
+    public ComboBox<String> minecraftVersionComboBox;
+    @FXML
+    public ComboBox<String> apiVersionComboBox;
+    @FXML
+    public ComboBox<String> loomVersionComboBox;
+    @FXML
+    public ComboBox<String> loaderVersionComboBox;
+    @FXML
+    public TextField modVersionTextField;
+    @FXML
+    public TextField basePackageNameTextField;
+    @FXML
+    public TextField archivesBaseNameTextField;
+    @FXML
+    public TextField modIdTextField;
+    @FXML
+    public TextField modNameTextField;
+    @FXML
+    public TextField mainClassNameTextField;
+    @FXML
+    public TextField authorsTextField;
+    @FXML
+    public TextField homepageTextField;
+    @FXML
+    public TextField sourcesTextField;
+    @FXML
+    public ComboBox<String> licenseComboBox;
+    @FXML
+    public CheckBox kotlinTemplate;
 
-    @FXML public Label message;
+    @FXML
+    public Label message;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -72,7 +82,8 @@ public class FXMLController implements Initializable {
             UrlQuery.requestJson("https://meta.fabricmc.net/v2/versions/game", JsonArray.class, (jsonArray, code) -> {
                 for (JsonElement element : jsonArray) {
                     JsonObject jsonObject = element.getAsJsonObject();
-                    if (jsonObject.get("stable").getAsBoolean()) stableMinecraftVersions.add(jsonObject.get("version").getAsString());
+                    if (jsonObject.get("stable").getAsBoolean())
+                        stableMinecraftVersions.add(jsonObject.get("version").getAsString());
                     minecraftVersions.add(jsonObject.get("version").getAsString());
                 }
 
@@ -171,7 +182,7 @@ public class FXMLController implements Initializable {
         String license = licenseTmp.toString();
 
         message.setText("Downloading template");
-        UrlQuery.requestStream("https://github.com/Awakened-Redstone/fabric-mod-template/archive/refs/heads/master.zip", (response, code) -> {
+        UrlQuery.requestStreamSync("https://github.com/Awakened-Redstone/fabric-mod-template/archive/refs/heads/master.zip", (response, code) -> {
             if (code != 200) {
                 setError("Failed to download the template!");
                 return;
@@ -179,19 +190,23 @@ public class FXMLController implements Initializable {
             setMessage("Decompressing template...");
 
             try {
-                Utils.unzip(response, Path.of(System.getProperty("java.io.tmpdir"),"fabric-mod-template"));
+                Utils.unzip(response, Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template"));
                 setMessage("");
             } catch (IOException e) {
-                setError("Failed to unzip template!");
+                setError("Failed to unzip the template!");
                 e.printStackTrace();
             }
         });
-
-        TemplateManager templateManager = TemplateManager.create();
-        templateManager.createVelocityContext();
-        String s = templateManager.generateTemplate(Map.of("NAME", "World"), "Hello ${NAME}");
-        System.out.println(s);
     }
+
+    TemplateManager templateManager = TemplateManager.create();
+        templateManager.createVelocityContext();
+    String s = templateManager.generateTemplate(Map.of("NAME", "World"), "Hello ${NAME}");
+        System.out.println(s);
+
+    //Cache last generation location at
+    //Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
+}
 
     public boolean parseErrors() {
         if (!minecraftVersions.contains(minecraftVersionComboBox.getValue())) {

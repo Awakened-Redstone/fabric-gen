@@ -59,6 +59,7 @@ public class UrlQuery {
             consumer.accept(Main.GSON.fromJson(responseBody, clazz), response.code());
         } catch (IOException e) {
             consumer.accept(null, -1);
+            e.printStackTrace();
         }
 
     }
@@ -81,21 +82,17 @@ public class UrlQuery {
         });
     }
 
-    public static void requestStream(String url, BiConsumer<InputStream, Integer> consumer) {
+    public static void requestStreamSync(String url, BiConsumer<InputStream, Integer> consumer) {
         HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
 
-        Main.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
-
-            @Override
-            public void onResponse(Call call, Response response) {
-                consumer.accept(Objects.requireNonNull(response.body()).byteStream(), response.code());
-            }
-
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                consumer.accept(null, -1);
-            }
-        });
+        Response response = null;
+        try {
+            response = Main.OK_HTTP_CLIENT.newCall(request).execute();
+            consumer.accept(Objects.requireNonNull(response.body()).byteStream(), response.code());
+        } catch (IOException e) {
+            consumer.accept(null, -1);
+            e.printStackTrace();
+        }
     }
 }
