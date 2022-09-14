@@ -197,16 +197,14 @@ public class FXMLController implements Initializable {
                 e.printStackTrace();
             }
         });
-    }
 
-    TemplateManager templateManager = TemplateManager.create();
-        templateManager.createVelocityContext();
-    String s = templateManager.generateTemplate(Map.of("NAME", "World"), "Hello ${NAME}");
+        TemplateManager templateManager = TemplateManager.create();
+        String s = templateManager.generateTemplate(Map.of("NAME", "World"), "Hello ${NAME}");
         System.out.println(s);
 
-    //Cache last generation location at
-    //Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
-}
+        //Cache last generation location at
+        //Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
+    }
 
     public boolean parseErrors() {
         if (!minecraftVersions.contains(minecraftVersionComboBox.getValue())) {
