@@ -29,6 +29,8 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class FXMLController implements Initializable {
     public static FXMLController INSTANCE;
@@ -39,39 +41,27 @@ public class FXMLController implements Initializable {
     public static List<String> loomVersions = new ArrayList<>();
     public static List<String> loaderVersions = new ArrayList<>();
 
-    @FXML
-    public ComboBox<String> minecraftVersionComboBox;
-    @FXML
-    public ComboBox<String> apiVersionComboBox;
-    @FXML
-    public ComboBox<String> loomVersionComboBox;
-    @FXML
-    public ComboBox<String> loaderVersionComboBox;
-    @FXML
-    public TextField modVersionTextField;
-    @FXML
-    public TextField basePackageNameTextField;
-    @FXML
-    public TextField archivesBaseNameTextField;
-    @FXML
-    public TextField modIdTextField;
-    @FXML
-    public TextField modNameTextField;
-    @FXML
-    public TextField mainClassNameTextField;
-    @FXML
-    public TextField authorsTextField;
-    @FXML
-    public TextField homepageTextField;
-    @FXML
-    public TextField sourcesTextField;
-    @FXML
-    public ComboBox<String> licenseComboBox;
-    @FXML
-    public CheckBox kotlinTemplate;
+    public String licenseContent;
+    public String gradleVersion;
+    public String javaVersion;
 
-    @FXML
-    public Label message;
+    @FXML public ComboBox<String> minecraftVersionComboBox;
+    @FXML public ComboBox<String> apiVersionComboBox;
+    @FXML public ComboBox<String> loomVersionComboBox;
+    @FXML public ComboBox<String> loaderVersionComboBox;
+    @FXML public TextField modVersionTextField;
+    @FXML public TextField basePackageNameTextField;
+    @FXML public TextField archivesBaseNameTextField;
+    @FXML public TextField modIdTextField;
+    @FXML public TextField modNameTextField;
+    @FXML public TextField mainClassNameTextField;
+    @FXML public TextField authorsTextField;
+    @FXML public TextField homepageTextField;
+    @FXML public TextField sourcesTextField;
+    @FXML public ComboBox<String> licenseComboBox;
+    @FXML public CheckBox kotlinTemplate;
+
+    @FXML public Label message;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -166,26 +156,58 @@ public class FXMLController implements Initializable {
 
         if (parseErrors()) return;
 
-        StringBuilder licenseTmp = new StringBuilder();
-
         message.setText("Getting license...");
         UrlQuery.requestJsonSync("https://api.github.com/licenses/" + licenseComboBox.getValue(), JsonObject.class, (jsonObject, code) -> {
             if (code != 200) {
                 setError("Could not get the license!");
-                return;
+                return; //TODO: mark error and stop processing
             } else {
                 setMessage("");
             }
-            licenseTmp.append(jsonObject.get("body").getAsString());
+            licenseContent = jsonObject.get("body").getAsString();
         });
 
-        String license = licenseTmp.toString();
+        setMessage("Getting Java version...");
+        UrlQuery.requestJsonSync("http://piston-meta.mojang.com/mc/game/version_manifest_v2.json", JsonArray.class, (jsonArray, code) -> {
+            if (code != 200) {
+                setError("Failed to get PistonMeta data!");
+                return; //TODO: mark error and stop processing
+            }
+
+            Optional<JsonObject> versionInfo = StreamSupport.stream(jsonArray.spliterator(), true).map(JsonElement::getAsJsonObject)
+                    .filter(jsonObject -> jsonObject.get("id").getAsString().equalsIgnoreCase(minecraftVersionComboBox.getValue()))
+                    .findFirst();
+
+            if (versionInfo.isEmpty()) {
+                setError("Failed to get PistonMeta url!");
+                return; //TODO: mark error and stop processing
+            }
+
+            UrlQuery.requestJsonSync(versionInfo.get().get("url").getAsString(), JsonObject.class, (jsonObject, code2) -> {
+                if (code2 != 200) {
+                    setError("Failed to get Minecraft version data!");
+                    return; //TODO: mark error and stop processing
+                }
+
+                javaVersion = jsonObject.get("javaVersion").getAsJsonObject().get("majorVersion").getAsString();
+                setMessage("");
+            });
+        });
+
+        setMessage("Getting Gradle version...");
+        UrlQuery.requestJsonSync("https://services.gradle.org/versions/current", JsonObject.class, (jsonObject, code) -> {
+            if (code != 200) {
+                setError("Failed to get Gradle version!");
+                return; //TODO: mark error and stop processing
+            } else setMessage("");
+            gradleVersion = jsonObject.get("version").getAsString();
+        });
 
         message.setText("Downloading template");
         UrlQuery.requestStreamSync("https://github.com/Awakened-Redstone/fabric-mod-template/archive/refs/heads/master.zip", (response, code) -> {
             if (code != 200) {
                 setError("Failed to download the template!");
-                return;
+                return; //TODO: mark error and stop processing
             }
             setMessage("Decompressing template...");
 
@@ -195,6 +217,7 @@ public class FXMLController implements Initializable {
             } catch (IOException e) {
                 setError("Failed to unzip the template!");
                 e.printStackTrace();
+                //TODO: mark error and stop processing
             }
         });
 
@@ -203,7 +226,7 @@ public class FXMLController implements Initializable {
         System.out.println(s);
 
         //Cache last generation location at
-        //Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
+        //Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "cache");
     }
 
     public boolean parseErrors() {
