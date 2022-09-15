@@ -11,7 +11,9 @@ public class FileUtil {
     public static String readFile(File file) throws IOException {
         if (file.isDirectory()) throw new IOException("File must not be a directory!");
         FileInputStream inputStream = new FileInputStream(file);
-        return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        String string = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        inputStream.close();
+        return string;
     }
 
     public static void writeFile(File file, String fileContent) throws IOException {

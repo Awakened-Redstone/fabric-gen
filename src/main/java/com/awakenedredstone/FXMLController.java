@@ -20,7 +20,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.*;
-import org.apache.commons.collections.keyvalue.DefaultMapEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
@@ -403,7 +402,7 @@ public class FXMLController implements Initializable {
                     JsonObject jsonObject = JsonParser.parseString(generatedTemplate).getAsJsonObject();
                     if (StringUtils.isNotBlank(authorsTextField.getText())) {
                         JsonArray jsonArray = new JsonArray();
-                        for (String author : authorsTextField.getText().split("/,[ ]?/")) {
+                        for (String author : authorsTextField.getText().split(", ?")) {
                             jsonArray.add(author);
                         }
                         jsonObject.add("authors", jsonArray);
@@ -553,20 +552,25 @@ public class FXMLController implements Initializable {
             submit.setOnAction(event -> stage.close());
             openChooser.setOnAction(event -> {
                 Optional<File> file = Optional.ofNullable(directoryChooser.showDialog(scene.getWindow()));
-                file.ifPresent(file1 -> input.setText(file1.getAbsolutePath()));
+                file.ifPresent(file1 -> {
+                    input.setText(file1.getAbsolutePath());
+                    updateLabel.run();
+                });
             });
             input.setOnKeyReleased(event -> updateLabel.run());
             input.setOnKeyPressed(event -> updateLabel.run());
-            input.setOnAction(event -> updateLabel.run());
             input.setOnKeyTyped(event -> updateLabel.run());
+            input.setOnAction(event -> updateLabel.run());
 
             stage.setOnCloseRequest(event -> cancelled.set(true));
 
             stage.setScene(scene);
             stage.showAndWait();
 
-            Main.getPersistentCache().generationPath = parsePath(input.getText());
-            Main.CACHE_CONTROLLER.save();
+            if (!cancelled.get()) {
+                Main.getPersistentCache().generationPath = parsePath(input.getText());
+                Main.CACHE_CONTROLLER.save();
+            }
 
             return cancelled.get() ? null : parsePath(input.getText() + File.separator + modName);
         }
