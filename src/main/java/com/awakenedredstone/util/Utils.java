@@ -1,4 +1,8 @@
-package com.awakenedredstone;
+package com.awakenedredstone.util;
+
+import com.awakenedredstone.FXMLController;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,10 +18,8 @@ public class Utils {
     public static void unzip(InputStream stream, Path destDir) throws IOException {
         File dir = destDir.toFile();
         // create output directory if it doesn't exist
-        if (!dir.exists()) {
-            Files.delete(destDir);
-            dir.mkdirs();
-        }
+        if (dir.exists()) return;
+        dir.mkdirs();
         //buffer for read and write data to file
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(stream);
@@ -25,7 +27,7 @@ public class Utils {
         while (ze != null) {
             String fileName = ze.getName();
             File newFile = new File(destDir + File.separator + fileName);
-            System.out.println("Unzipping to " + newFile.getAbsolutePath());
+            FXMLController.INSTANCE.setMessage("Unzipping to " + newFile.getAbsolutePath());
             if (ze.isDirectory()) {
                 newFile.mkdirs();
             } else {

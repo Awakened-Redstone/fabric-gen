@@ -1,4 +1,4 @@
-package com.awakenedredstone;
+package com.awakenedredstone.util;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;

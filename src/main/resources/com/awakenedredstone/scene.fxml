@@ -44,7 +44,7 @@
                         <Label text="Authors" GridPane.rowIndex="10" />
                         <Label text="Homepage" GridPane.rowIndex="11" />
                         <Label text="Sources" GridPane.rowIndex="12" />
-                        <Label text="License" GridPane.rowIndex="13" />
+                        <Label text="License *" GridPane.rowIndex="13" />
                         <Label text="Kotlin Template [WIP]" GridPane.rowIndex="14" />
                         <ComboBox fx:id="minecraftVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" onAction="#onMinecraftVersionChange" prefWidth="150.0" GridPane.columnIndex="1" />
                         <ComboBox fx:id="apiVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
@@ -60,7 +60,7 @@
                         <TextField fx:id="homepageTextField" promptText="https://..." GridPane.columnIndex="1" GridPane.rowIndex="11" />
                         <TextField fx:id="sourcesTextField" promptText="https://..." GridPane.columnIndex="1" GridPane.rowIndex="12" />
                         <ComboBox fx:id="licenseComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" promptText="MIT" GridPane.columnIndex="1" GridPane.rowIndex="13" />
-                        <CheckBox fx:id="kotlinTemplate" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="14" />
+                        <CheckBox fx:id="kotlinTemplate" disable="true" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="14" />
                     </children>
                 </GridPane>
             </children>
@@ -70,7 +70,7 @@
             <children>
                 <VBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                     <children>
-                        <Label fx:id="message" />
+                        <Label fx:id="message" minWidth="-Infinity" />
                         <Label/>
                         <Button fx:id="generateProjectButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onMouseReleased="#onGenerateProjectMouseReleased" text="Generate Project" textAlignment="CENTER" />
                     </children>

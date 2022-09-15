@@ -1,5 +1,6 @@
-package com.awakenedredstone;
+package com.awakenedredstone.util;
 
+import com.awakenedredstone.Main;
 import com.google.gson.JsonElement;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
