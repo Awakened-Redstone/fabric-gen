@@ -21,9 +21,16 @@ public class Main extends Application {
     public static final Path TEMPLATE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
     public static final Path CACHE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "cache");
     public static final Pattern SEMVER = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
+    public static final CacheController CACHE_CONTROLLER = new CacheController(CACHE_PATH);
+
+    public static PersistentCache getPersistentCache() {
+        return CACHE_CONTROLLER.getPersistentCache();
+    }
 
     @Override
     public void start(Stage stage) throws Exception {
+        CACHE_CONTROLLER.loadOrCreateCache();
+
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("scene.fxml")));
 
         Scene scene = new Scene(root);

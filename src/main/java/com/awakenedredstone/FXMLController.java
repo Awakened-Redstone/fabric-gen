@@ -1,11 +1,11 @@
 package com.awakenedredstone;
 
-import com.awakenedredstone.util.TemplateManager;
-import com.awakenedredstone.util.UrlQuery;
-import com.awakenedredstone.util.Utils;
+import com.awakenedredstone.util.*;
+import com.awakenedredstone.util.version.SemanticVersionImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,15 +16,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.*;
+import org.apache.commons.collections.keyvalue.DefaultMapEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -36,7 +34,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -57,6 +54,7 @@ public class FXMLController implements Initializable {
     public String licenseContent;
     public String gradleVersion;
     public String javaVersion;
+    public String yarnVersion;
     public String generationPath;
 
     @FXML public ComboBox<String> minecraftVersionComboBox;
@@ -165,8 +163,11 @@ public class FXMLController implements Initializable {
         } else setMessage("");
     }
 
-    public void onGenerateProjectMouseReleased(MouseEvent event) {
-        if (event.getButton() != MouseButton.PRIMARY) return;
+    public void onGenerateProjectOnAction(ActionEvent event) {
+        onButtonClicked();
+    }
+
+    public void onButtonClicked() {
         Thread task = new Thread(() -> {
             setMessage("");
             if (parseErrors()) return;
@@ -184,8 +185,14 @@ public class FXMLController implements Initializable {
                     return;
                 }
 
-            } catch (ExecutionException | InterruptedException e) {
-                setError("Failed to open location prompt!");
+                Path targetPath = Path.of(generationPath);
+                if (targetPath.toFile().exists() && !FileUtils.isEmptyDirectory(targetPath.toFile())) {
+                    setError("Target folder must be empty!");
+                    hasError.set(true);
+                    return;
+                }
+            } catch (ExecutionException | InterruptedException | IOException e) {
+                setError("An error occurred when checking the generation location!");
                 e.printStackTrace();
                 return;
             }
@@ -200,6 +207,7 @@ public class FXMLController implements Initializable {
                     setMessage("");
                 }
                 licenseContent = jsonObject.get("body").getAsString();
+                Platform.runLater(() -> licenseComboBox.setValue(jsonObject.get("spdx_id").getAsString()));
             });
 
             if (hasError.get()) return;
@@ -242,6 +250,17 @@ public class FXMLController implements Initializable {
                     return;
                 } else setMessage("");
                 gradleVersion = jsonObject.get("version").getAsString();
+            });
+
+            if (hasError.get()) return;
+            setMessage("Getting Yarn version...");
+            UrlQuery.requestJsonSync("https://meta.fabricmc.net/v2/versions/yarn/" + minecraftVersionComboBox.getValue(), JsonArray.class, (jsonArray, code) -> {
+                if (code != 200) {
+                    setError("Failed to get Yarn version!");
+                    hasError.set(true);
+                    return;
+                } else setMessage("");
+                yarnVersion = jsonArray.get(0).getAsJsonObject().get("version").getAsString();
             });
 
             if (hasError.get()) return;
@@ -302,7 +321,9 @@ public class FXMLController implements Initializable {
             System.out.println(s);
 
             try {
+                setMessage("Generating mod...");
                 Path targetPath = Path.of(generationPath);
+                Path templates = Main.TEMPLATE_PATH.resolve("template");
 
                 if (targetPath.toFile().exists() && !FileUtils.isEmptyDirectory(targetPath.toFile())) {
                     setError("Target folder must be empty!");
@@ -312,6 +333,108 @@ public class FXMLController implements Initializable {
 
                 targetPath.toFile().mkdirs();
                 FileUtils.copyDirectory(Main.TEMPLATE_PATH.resolve("pregen").toFile(), targetPath.toFile());
+
+                SemanticVersionImpl newModIdVersion = new SemanticVersionImpl("0.59.0", false);
+                int i = new SemanticVersionImpl(apiVersionComboBox.getValue(), false).compareTo(newModIdVersion);
+
+                Map.Entry<String, String> MINECRAFT_VERSION = MapBuilder.createEntry("MINECRAFT_VERSION", minecraftVersionComboBox.getValue());
+                Map.Entry<String, String> API_MOD_ID = MapBuilder.createEntry("API_MOD_ID", i >= 0 ? "fabric-api" : "fabric");
+                Map.Entry<String, String> API_VERSION = MapBuilder.createEntry("API_VERSION", apiVersionComboBox.getValue());
+                Map.Entry<String, String> LOADER_VERSION = MapBuilder.createEntry("LOADER_VERSION", loaderVersionComboBox.getValue());
+                Map.Entry<String, String> LOOM_VERSION = MapBuilder.createEntry("LOOM_VERSION", loomVersionComboBox.getValue());
+
+                Map.Entry<String, String> MOD_VERSION = MapBuilder.createEntry("MOD_VERSION", modVersionTextField.getText());
+                Map.Entry<String, String> MAVEN_GROUP = MapBuilder.createEntry("MAVEN_GROUP", basePackageNameTextField.getText());
+                Map.Entry<String, String> MAVEN_GROUP_PATH = MapBuilder.createEntry("MAVEN_GROUP", basePackageNameTextField.getText().replace(".", "/"));
+                Map.Entry<String, String> ARCHIVES_BASE_NAME = MapBuilder.createEntry("ARCHIVES_BASE_NAME", archivesBaseNameTextField.getText());
+                Map.Entry<String, String> MOD_ID = MapBuilder.createEntry("MOD_ID", modIdTextField.getText());
+                Map.Entry<String, String> MOD_NAME = MapBuilder.createEntry("MOD_NAME", modNameTextField.getText());
+                Map.Entry<String, String> MAIN_CLASS = MapBuilder.createEntry("MAIN_CLASS", mainClassNameTextField.getText());
+
+                Map.Entry<String, String> HOMEPAGE = MapBuilder.createEntry("HOMEPAGE", homepageTextField.getText());
+                Map.Entry<String, String> SOURCES = MapBuilder.createEntry("SOURCES", sourcesTextField.getText());
+
+                Map.Entry<String, String> LICENSE = MapBuilder.createEntry("LICENSE", licenseComboBox.getValue());
+
+                Map.Entry<String, String> LICENSE_CONTENT = MapBuilder.createEntry("LICENSE_CONTENT", licenseContent);
+                Map.Entry<String, String> YARN_VERSION = MapBuilder.createEntry("YARN_VERSION", yarnVersion);
+                Map.Entry<String, String> JAVA_VERSION = MapBuilder.createEntry("JAVA_VERSION", javaVersion);
+                Map.Entry<String, String> GRADLE_VERSION = MapBuilder.createEntry("GRADLE_VERSION", gradleVersion);
+                Map.Entry<String, String> MOD_DESCRIPTION = MapBuilder.createEntry("MOD_DESCRIPTION", "Placeholder text");
+
+                Path resourcesPath = targetPath.resolve("src/main/resources");
+                Path srcPath = targetPath.resolve(templateManager.generateTemplate(new MapBuilder<String, String>()
+                        .put(MAVEN_GROUP_PATH, ARCHIVES_BASE_NAME).build(),
+                        "src/main/java/${MAVEN_GROUP}/${ARCHIVES_BASE_NAME}"));
+
+                resourcesPath.toFile().mkdirs();
+                srcPath.toFile().mkdirs();
+
+                {
+                    setMessage("Generating build.gradle");
+                    File file = targetPath.resolve("build.gradle").toFile();
+                    String template = FileUtil.readFile(templates.resolve("build.gradle.ft").toFile());
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(LOOM_VERSION, JAVA_VERSION);
+                    FileUtil.writeFile(file, templateManager.generateTemplate(mapBuilder.build(), template));
+                }
+                {
+                    setMessage("Generating gradle.properties");
+                    File file = targetPath.resolve("gradle.properties").toFile();
+                    String template = FileUtil.readFile(templates.resolve("gradle.properties.ft").toFile());
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(MINECRAFT_VERSION,
+                            LOADER_VERSION, YARN_VERSION, API_VERSION, MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_VERSION);
+                    FileUtil.writeFile(file, templateManager.generateTemplate(mapBuilder.build(), template));
+                }
+                {
+                    setMessage("Generating gradle-wrapper.properties");
+                    File file = targetPath.resolve("gradle/wrapper/gradle-wrapper.properties").toFile();
+                    String template = FileUtil.readFile(templates.resolve("gradle-wrapper.properties.ft").toFile());
+                    file.getParentFile().mkdirs();
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(GRADLE_VERSION);
+                    FileUtil.writeFile(file, templateManager.generateTemplate(mapBuilder.build(), template));
+                }
+                {
+                    setMessage("Generating fabric.mod.json");
+                    File file = resourcesPath.resolve("fabric.mod.json").toFile();
+                    String template = FileUtil.readFile(templates.resolve("fabric.mod.json.ft").toFile());
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(API_MOD_ID, API_VERSION, MOD_ID, MAVEN_GROUP, ARCHIVES_BASE_NAME, MAIN_CLASS,
+                            LOADER_VERSION, MINECRAFT_VERSION, MOD_DESCRIPTION, MOD_NAME, LICENSE, HOMEPAGE, SOURCES);
+                    String generatedTemplate = templateManager.generateTemplate(mapBuilder.build(), template);
+                    JsonObject jsonObject = JsonParser.parseString(generatedTemplate).getAsJsonObject();
+                    if (StringUtils.isNotBlank(authorsTextField.getText())) {
+                        JsonArray jsonArray = new JsonArray();
+                        for (String author : authorsTextField.getText().split("/,[ ]?/")) {
+                            jsonArray.add(author);
+                        }
+                        jsonObject.add("authors", jsonArray);
+                    }
+                    JsonHelper.writeJsonToFile(jsonObject, file);
+                }
+                {
+                    String path = templateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "${MOD_ID}.mixins.json");
+                    setMessage("Generating " + path);
+                    File file = resourcesPath.resolve(path).toFile();
+                    String template = FileUtil.readFile(templates.resolve("mixins.json.ft").toFile());
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
+                    FileUtil.writeFile(file, templateManager.generateTemplate(mapBuilder.build(), template));
+                }
+                {
+                    setMessage(String.format("Generating %s.java", mainClassNameTextField.getText()));
+                    String template = FileUtil.readFile(templates.resolve("ModMain.java.ft").toFile());
+                    MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
+                    FileUtil.writeFile(srcPath.resolve(mainClassNameTextField.getText() + ".java").toFile(), templateManager.generateTemplate(mapBuilder.build(), template));
+                }
+                {
+                    setMessage("Generating icon.png");
+                    String path = templateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "assets/${MOD_ID}/icon.png");
+                    File file = resourcesPath.resolve(path).toFile();
+                    FileUtils.copyFile(templates.resolve("icon.png").toFile(), file);
+                }
+                {
+                    setMessage("Generating LICENSE");
+                    FileUtil.writeFile(targetPath.resolve("LICENSE").toFile(), licenseContent);
+                }
+                setMessage("");
             } catch (Exception e) {
                 setError("Failed to generate mod!");
                 e.printStackTrace();
@@ -319,6 +442,7 @@ public class FXMLController implements Initializable {
                 return;
             }
 
+            System.out.println();
             //Cache last generation location
         });
         task.setDaemon(true);
@@ -423,24 +547,26 @@ public class FXMLController implements Initializable {
 
             Runnable updateLabel = () -> label.setText(String.format("Generating at: %s%s%s", parsePath(input.getText()), File.separator, modName));
 
-            input.setText(System.getProperty("user.dir"));
+            input.setText(Main.getPersistentCache().generationPath);
             updateLabel.run();
 
-            submit.setOnMouseReleased(event -> {
-                if (event.getButton() == MouseButton.PRIMARY) stage.close();
-            });
-            openChooser.setOnMouseReleased(event -> {
-                if (event.getButton() == MouseButton.PRIMARY) {
-                    Optional<File> file = Optional.ofNullable(directoryChooser.showDialog(scene.getWindow()));
-                    file.ifPresent(file1 -> input.setText(file1.getAbsolutePath()));
-                }
+            submit.setOnAction(event -> stage.close());
+            openChooser.setOnAction(event -> {
+                Optional<File> file = Optional.ofNullable(directoryChooser.showDialog(scene.getWindow()));
+                file.ifPresent(file1 -> input.setText(file1.getAbsolutePath()));
             });
             input.setOnKeyReleased(event -> updateLabel.run());
+            input.setOnKeyPressed(event -> updateLabel.run());
+            input.setOnAction(event -> updateLabel.run());
+            input.setOnKeyTyped(event -> updateLabel.run());
 
             stage.setOnCloseRequest(event -> cancelled.set(true));
 
             stage.setScene(scene);
             stage.showAndWait();
+
+            Main.getPersistentCache().generationPath = parsePath(input.getText());
+            Main.CACHE_CONTROLLER.save();
 
             return cancelled.get() ? null : parsePath(input.getText() + File.separator + modName);
         }

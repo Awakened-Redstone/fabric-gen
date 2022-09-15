@@ -72,7 +72,7 @@
                     <children>
                         <Label fx:id="message" minWidth="-Infinity" />
                         <Label/>
-                        <Button fx:id="generateProjectButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onMouseReleased="#onGenerateProjectMouseReleased" text="Generate Project" textAlignment="CENTER" />
+                        <Button fx:id="generateProjectButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#onGenerateProjectOnAction" text="Generate Project" textAlignment="CENTER" />
                     </children>
                 </VBox>
             </children>
