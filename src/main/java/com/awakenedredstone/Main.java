@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 public class Main extends Application {
     public static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS).build();
-    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
     public static final Path TEMPLATE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "template");
     public static final Path CACHE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "fabricmodgen", "cache");
     public static final Pattern SEMVER = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
