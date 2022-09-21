@@ -65,6 +65,7 @@ public class FXMLController implements Initializable {
     @FXML public TextField archivesBaseNameTextField;
     @FXML public TextField modIdTextField;
     @FXML public TextField modNameTextField;
+    @FXML public TextField modDescriptionTextField;
     @FXML public TextField mainClassNameTextField;
 
     @FXML public TextField authorsTextField;
@@ -316,8 +317,6 @@ public class FXMLController implements Initializable {
             if (hasError.get()) return;
 
             TemplateManager templateManager = TemplateManager.create();
-            String s = templateManager.generateTemplate(Map.of("NAME", "World"), "Hello ${NAME}");
-            System.out.println(s);
 
             try {
                 setMessage("Generating mod...");
@@ -442,7 +441,6 @@ public class FXMLController implements Initializable {
             }
 
             System.out.println();
-            //Cache last generation location
         });
         task.setDaemon(true);
         task.start();
