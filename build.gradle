@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'com.awakenedredstone'
-version '1.0.1'
+version '1.1.0'
 
 repositories {
     mavenCentral()
@@ -21,9 +21,9 @@ dependencies {
     implementation 'org.apache.velocity:velocity:1.7'
     implementation 'org.apache.velocity:velocity-tools:2.0'
 
-    compileOnly "org.openjfx:javafx-graphics:17.0.2:win"
-    compileOnly "org.openjfx:javafx-graphics:17.0.2:linux"
-    compileOnly "org.openjfx:javafx-graphics:17.0.2:mac"
+    runtimeOnly "org.openjfx:javafx-graphics:17.0.2:win"
+    runtimeOnly "org.openjfx:javafx-graphics:17.0.2:linux"
+    runtimeOnly "org.openjfx:javafx-graphics:17.0.2:mac"
 }
 
 javafx {
@@ -40,6 +40,6 @@ build.dependsOn shadowJar
 
 jar {
     manifest {
-        attributes "Main-Class": 'com.awakenedredstone.ShutUpJavaFX'
+        attributes "Main-Class": 'com.awakenedredstone.newcode.Wrapper'
     }
 }
