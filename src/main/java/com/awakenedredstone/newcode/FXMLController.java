@@ -128,7 +128,6 @@ public class FXMLController implements Initializable {
         }
 
         if (hasError.get()) return;
-        if (!parseData()) return;
 
         try {
             FutureTask<String> futureTask = new FutureTask<>(new LocationPrompt(message.getScene().getWindow(), modNameTextField.getText()));
@@ -149,10 +148,13 @@ public class FXMLController implements Initializable {
                 return;
             }
         } catch (ExecutionException | InterruptedException | IOException e) {
-            setError("An error occurred when checking the generation location!");
+            setError("An unknown error occurred when checking the generation location!");
             e.printStackTrace();
             return;
         }
+
+        if (hasError.get()) return;
+        if (!parseData()) return;
 
         Constants.CACHE_CONTROLLER.save();
         setMessage("");
@@ -267,70 +269,68 @@ public class FXMLController implements Initializable {
         }
 
         if (hasError.get()) return false;
-        if (Constants.getPersistentCache().yarnVersions.containsKey(minecraftVersionComboBox.getValue())) {
-            yarnVersion = Constants.getPersistentCache().yarnVersions.get(minecraftVersionComboBox.getValue());
-        } else {
-            setMessage("Getting Yarn version...");
-            UrlQuery.requestJsonSync("https://meta.fabricmc.net/v2/versions/yarn/" + minecraftVersionComboBox.getValue(), JsonArray.class, (jsonArray, code) -> {
-                if (code != 200) {
-                    setError("Failed to get Yarn version!");
-                    hasError.set(true);
-                    return;
-                } else setMessage("");
-                yarnVersion = jsonArray.get(0).getAsJsonObject().get("version").getAsString();
-                Constants.getPersistentCache().yarnVersions.put(minecraftVersionComboBox.getValue(), yarnVersion);
-            });
-        }
+        setMessage("Getting Yarn version...");
+        UrlQuery.requestJsonSync("https://meta.fabricmc.net/v2/versions/yarn/" + minecraftVersionComboBox.getValue(), JsonArray.class, (jsonArray, code) -> {
+            if (code != 200) {
+                setError("Failed to get Yarn version!");
+                hasError.set(true);
+                return;
+            } else setMessage("");
+            yarnVersion = jsonArray.get(0).getAsJsonObject().get("version").getAsString();
+        });
 
         if (hasError.get()) return false;
-        if (!Constants.TEMPLATE_PATH.toFile().exists()) {
-            setMessage("Downloading template");
-            UrlQuery.requestJsonSync("https://api.github.com/repos/Awakened-Redstone/fabric-mod-template/releases/latest", JsonObject.class, (jsonObject, code1) -> {
-                if (code1 != 200) {
-                    setError("Failed to get the template info!");
-                    hasError.set(true);
-                    return;
-                }
+        setMessage("Downloading template");
+        UrlQuery.requestJsonSync("https://api.github.com/repos/Awakened-Redstone/fabric-mod-template/releases/latest", JsonObject.class, (jsonObject, code1) -> {
+            if (code1 != 200) {
+                setError("Failed to get the template info!");
+                hasError.set(true);
+                return;
+            }
 
-                UrlQuery.requestJsonSync(jsonObject.get("assets_url").getAsString(), JsonArray.class, (jsonArray, code2) -> {
-                    if (code2 != 200) {
-                        setError("Failed to get the template info!");
+            String tag_name = jsonObject.get("tag_name").getAsString();
+            if (Constants.getPersistentCache().templateVersion.equals(tag_name)) return;
+            else {
+                try {
+                    FileUtils.deleteDirectory(Constants.TEMPLATE_PATH.toFile());
+                } catch (IOException ignored) {}
+            }
+
+            JsonArray assets = jsonObject.get("assets").getAsJsonArray();
+            String downloadUrl = assets.get(0).getAsJsonObject().get("browser_download_url").getAsString();
+
+            try {
+                UrlQuery.requestStreamSync(downloadUrl, (response, code) -> {
+                    if (code != 200) {
+                        setError("Failed to download the template!");
                         hasError.set(true);
                         return;
                     }
 
+                    setMessage("Decompressing template...");
+
                     try {
-                        UrlQuery.requestStreamSync(jsonArray.get(0).getAsJsonObject().get("browser_download_url").getAsString(), (response, code) -> {
-                            if (code != 200) {
-                                setError("Failed to download the template!");
-                                hasError.set(true);
-                                return;
-                            }
+                        Utils.unzip(response, Constants.TEMPLATE_PATH);
+                        setMessage("");
 
-                            setMessage("Decompressing template...");
-
-                            try {
-                                Utils.unzip(response, Constants.TEMPLATE_PATH);
-                                setMessage("");
-                            } catch (IOException e) {
-                                setError("Failed to unzip the template!");
-                                e.printStackTrace();
-                                hasError.set(true);
-                            } finally {
-                                try {
-                                    response.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                    } catch (Exception e) {
-                        setError("Failed to download the template!");
+                        Constants.getPersistentCache().templateVersion = tag_name;
+                    } catch (IOException e) {
+                        setError("Failed to unzip the template!");
+                        e.printStackTrace();
                         hasError.set(true);
+                    } finally {
+                        try {
+                            response.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
-            });
-        }
+            } catch (Exception e) {
+                setError("Failed to download the template!");
+                hasError.set(true);
+            }
+        });
 
         Constants.CACHE_CONTROLLER.save();
         return true;
