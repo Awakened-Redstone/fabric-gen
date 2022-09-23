@@ -1,4 +1,4 @@
-package com.awakenedredstone.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 public class StringVersion implements Version {
 	private final String version;

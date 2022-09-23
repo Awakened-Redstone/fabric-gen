@@ -1,4 +1,4 @@
-package com.awakenedredstone.newcode.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 import java.util.Optional;
 

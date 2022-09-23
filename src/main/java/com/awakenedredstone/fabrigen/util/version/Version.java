@@ -1,4 +1,4 @@
-package com.awakenedredstone.newcode.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 public interface Version extends Comparable<Version> {
 	/**
