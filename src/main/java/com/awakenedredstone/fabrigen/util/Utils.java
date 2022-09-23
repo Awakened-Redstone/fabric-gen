@@ -1,6 +1,6 @@
-package com.awakenedredstone.newcode.util;
+package com.awakenedredstone.fabrigen.util;
 
-import com.awakenedredstone.newcode.FXMLController;
+import com.awakenedredstone.fabrigen.FXMLController;
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -1,4 +1,4 @@
-package com.awakenedredstone.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 @SuppressWarnings({ "deprecation", "serial" }) //Extending the deprecated one for backwards compatibility
 public class VersionParsingException extends Exception {

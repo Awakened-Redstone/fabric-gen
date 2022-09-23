@@ -1,6 +1,6 @@
-package com.awakenedredstone.newcode.util;
+package com.awakenedredstone.fabrigen.util;
 
-import com.awakenedredstone.newcode.Constants;
+import com.awakenedredstone.fabrigen.Constants;
 import com.google.gson.JsonElement;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;

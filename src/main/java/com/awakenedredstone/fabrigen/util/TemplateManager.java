@@ -1,4 +1,4 @@
-package com.awakenedredstone.newcode.util;
+package com.awakenedredstone.fabrigen.util;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;

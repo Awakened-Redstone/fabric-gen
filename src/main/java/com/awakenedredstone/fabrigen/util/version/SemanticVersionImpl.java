@@ -1,4 +1,4 @@
-package com.awakenedredstone.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 import java.util.Arrays;
 import java.util.Objects;

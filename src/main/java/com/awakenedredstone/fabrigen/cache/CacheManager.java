@@ -1,25 +1,33 @@
-package com.awakenedredstone.newcode.cache;
+package com.awakenedredstone.fabrigen.cache;
 
-import com.awakenedredstone.newcode.Constants;
-import com.awakenedredstone.newcode.util.JsonHelper;
+import com.awakenedredstone.fabrigen.Constants;
+import com.awakenedredstone.fabrigen.util.JsonHelper;
 import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Path;
 
-public class CacheController {
+public class CacheManager {
     private final Path dir;
     private final File cacheFile;
 
-    public CacheController(Path dir) {
+    public CacheManager(Path dir) {
         this.dir = dir;
         this.cacheFile = dir.resolve("cache.json").toFile();
     }
 
     private PersistentCache persistentCache;
 
-    public void loadOrCreateCache() {
+    public boolean safeLoadOrCreateCache() {
+        try {
+            return loadOrCreateCache();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean loadOrCreateCache() throws Exception {
         try {
             if ((dir.toFile().exists() && dir.toFile().isDirectory()) || dir.toFile().mkdirs()) {
                 if (cacheFile.exists() && cacheFile.isFile() && cacheFile.canRead()) {
@@ -28,16 +36,16 @@ public class CacheController {
                     JsonHelper.writeJsonToFile(defaultConfig(), getCacheFile());
                     persistentCache = new PersistentCache();
                 }
-                return;
+                System.out.println("Fabrigen cache loaded");
+                return true;
+            } else {
+                System.err.println("Failed to load the cache!");
+                return false;
             }
-            System.err.println("CubeController configurations loaded");
         } catch (Exception exception) {
-            System.err.println("An error occurred when trying to load the configurations!");
-            exception.printStackTrace();
-            return;
+            System.err.println("An error occurred when trying to load the cache!");
+            throw exception;
         }
-
-        System.err.println("Failed to load the configurations!");
     }
 
     public JsonObject defaultConfig() {

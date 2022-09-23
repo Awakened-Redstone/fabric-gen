@@ -1,4 +1,4 @@
-package com.awakenedredstone.newcode;
+package com.awakenedredstone.fabrigen;
 
 public class Wrapper {
     public static void main(String[] args) {

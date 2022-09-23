@@ -1,4 +1,4 @@
-package com.awakenedredstone.newcode.util;
+package com.awakenedredstone.fabrigen.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

@@ -1,12 +1,10 @@
-package com.awakenedredstone.newcode;
+package com.awakenedredstone.fabrigen;
 
-import com.awakenedredstone.newcode.util.TemplateManager;
-import com.awakenedredstone.newcode.util.UrlQuery;
-import com.awakenedredstone.newcode.util.Utils;
-import com.awakenedredstone.util.FileUtil;
-import com.awakenedredstone.util.JsonHelper;
-import com.awakenedredstone.util.MapBuilder;
-import com.awakenedredstone.util.version.SemanticVersionImpl;
+import com.awakenedredstone.fabrigen.util.*;
+import com.awakenedredstone.fabrigen.util.version.SemanticVersionImpl;
+import com.awakenedredstone.fabrigen.util.TemplateManager;
+import com.awakenedredstone.fabrigen.util.UrlQuery;
+import com.awakenedredstone.fabrigen.util.Utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,6 +43,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.stream.StreamSupport;
 
 public class FXMLController implements Initializable {
@@ -97,6 +96,22 @@ public class FXMLController implements Initializable {
         getVersions("https://api.modrinth.com/v2/project/fabric-api/version", "version_number", apiVersions, apiVersionComboBox);
     }
 
+    public void onMinecraftVersionComboBoxAction(ActionEvent event) {
+        getYarn(false);
+    }
+
+    public void onLicenseComboBoxAction(ActionEvent event) {
+        setMessage("");
+        if (Constants.getPersistentCache().licenses.contains(licenseComboBox.getValue())) {
+            licenseContent = findLicense(licenseComboBox.getValue());
+            if (licenseContent == null) {
+                setError("Invalid license! Removing from cache");
+                Constants.getPersistentCache().licenses.remove(licenseComboBox.getValue());
+                Constants.CACHE_MANAGER.save();
+            }
+        } else getLicense(false);
+    }
+
     public void onGenerateProjectOnAction(ActionEvent event) {
         Thread thread = new Thread(this::generateTemplate);
         thread.setDaemon(true);
@@ -104,6 +119,8 @@ public class FXMLController implements Initializable {
     }
 
     private void generateTemplate() {
+        Constants.SETTINGS_MANAGER.safeLoadOrCreateSetting();
+        Constants.CACHE_MANAGER.safeLoadOrCreateCache();
         AtomicBoolean hasError = new AtomicBoolean(false);
         setMessage("");
 
@@ -154,9 +171,12 @@ public class FXMLController implements Initializable {
         }
 
         if (hasError.get()) return;
-        if (!parseData()) return;
+        if (!parseData()) {
+            Constants.CACHE_MANAGER.save();
+            return;
+        } else Constants.CACHE_MANAGER.save();
 
-        Constants.CACHE_CONTROLLER.save();
+        Constants.CACHE_MANAGER.save();
         setMessage("");
 
         boolean success = kotlinTemplate.isSelected() ? generateKotlinMod(kotlinData) : generateJavaMod();
@@ -195,28 +215,20 @@ public class FXMLController implements Initializable {
     }
 
     public boolean parseData() {
+        setMessage("");
         AtomicBoolean hasError = new AtomicBoolean(false);
 
-        if (Constants.getPersistentCache().licenses.containsKey(licenseComboBox.getValue())) {
-            licenseContent = Constants.getPersistentCache().licenses.get(licenseComboBox.getValue());
+        if (Constants.getPersistentCache().licenses.contains(licenseComboBox.getValue())) {
+            licenseContent = findLicense(licenseComboBox.getValue());
+            if (licenseContent == null) {
+                setError("Invalid license! Removing from cache");
+                Constants.getPersistentCache().licenses.remove(licenseComboBox.getValue());
+                Constants.CACHE_MANAGER.save();
+            }
         } else {
-            setMessage("Getting license...");
-            UrlQuery.requestJsonSync("https://api.github.com/licenses/" + licenseComboBox.getValue(), JsonObject.class, (jsonObject, code) -> {
-                if (code != 200) {
-                    setError("Could not get the license!");
-                    hasError.set(true);
-                    return;
-                } else {
-                    setMessage("");
-                }
-                licenseContent = jsonObject.get("body").getAsString();
-                String spdx_id = jsonObject.get("spdx_id").getAsString();
-                Platform.runLater(() -> licenseComboBox.setValue(spdx_id));
-                Constants.getPersistentCache().licenses.put(spdx_id, licenseContent);
-            });
+            if (StringUtils.isBlank(licenseContent) && !getLicense(true)) return false;
         }
 
-        if (hasError.get()) return false;
         if (Constants.getPersistentCache().javaVersions.containsKey(minecraftVersionComboBox.getValue())) {
             javaVersion = Constants.getPersistentCache().javaVersions.get(minecraftVersionComboBox.getValue());
         } else {
@@ -269,71 +281,129 @@ public class FXMLController implements Initializable {
         }
 
         if (hasError.get()) return false;
+        if (StringUtils.isBlank(yarnVersion) && !getYarn(true)) return false;
+
+        if (Constants.getSettings().updateTemplate || !Constants.TEMPLATE_PATH.toFile().exists()) {
+            setMessage("Updating template");
+            String ending = StringUtils.isBlank(Constants.getSettings().templateVersion) ? "latest" : "tags/" + Constants.getSettings().templateVersion;
+            String url = String.format("https://api.github.com/repos/Awakened-Redstone/fabric-mod-template/releases/%s", ending);
+            UrlQuery.requestJsonSync(url, JsonObject.class, (jsonObject, code1) -> {
+                if (code1 != 200) {
+                    setError("Failed to get the template info!");
+                    hasError.set(true);
+                    return;
+                }
+
+                String tag_name = jsonObject.get("tag_name").getAsString();
+                if (Constants.getSettings().updateTemplate) {
+                    if (Constants.getPersistentCache().templateVersion.equals(tag_name)) return;
+                    else {
+                        try {
+                            FileUtils.deleteDirectory(Constants.TEMPLATE_PATH.toFile());
+                        } catch (IOException ignored) {
+                        }
+                    }
+                }
+
+                JsonArray assets = jsonObject.get("assets").getAsJsonArray();
+                String downloadUrl = assets.get(0).getAsJsonObject().get("browser_download_url").getAsString();
+
+                try {
+                    setMessage("Downloading template");
+                    UrlQuery.requestStreamSync(downloadUrl, (response, code) -> {
+                        if (code != 200) {
+                            setError("Failed to download the template!");
+                            hasError.set(true);
+                            return;
+                        }
+
+                        setMessage("Decompressing template...");
+
+                        try {
+                            Utils.unzip(response, Constants.TEMPLATE_PATH);
+                            setMessage("");
+
+                            Constants.getPersistentCache().templateVersion = tag_name;
+                        } catch (IOException e) {
+                            setError("Failed to unzip the template!");
+                            e.printStackTrace();
+                            hasError.set(true);
+                        } finally {
+                            try {
+                                response.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    setError("Failed to download the template!");
+                    hasError.set(true);
+                }
+            });
+        }
+
+        setMessage("");
+
+        return !hasError.get();
+    }
+
+    private boolean getYarn(boolean sync) {
+        AtomicBoolean hasError = new AtomicBoolean(false);
         setMessage("Getting Yarn version...");
-        UrlQuery.requestJsonSync("https://meta.fabricmc.net/v2/versions/yarn/" + minecraftVersionComboBox.getValue(), JsonArray.class, (jsonArray, code) -> {
+        String url = "https://meta.fabricmc.net/v2/versions/yarn/" + minecraftVersionComboBox.getValue();
+        BiConsumer<JsonArray, Integer> consumer =  (jsonArray, code) -> {
             if (code != 200) {
                 setError("Failed to get Yarn version!");
                 hasError.set(true);
                 return;
             } else setMessage("");
             yarnVersion = jsonArray.get(0).getAsJsonObject().get("version").getAsString();
-        });
+        };
+        if (sync) UrlQuery.requestJsonSync(url, JsonArray.class, consumer);
+        else UrlQuery.requestJson(url, JsonArray.class, consumer);
+        return !hasError.get();
+    }
 
-        if (hasError.get()) return false;
-        setMessage("Downloading template");
-        UrlQuery.requestJsonSync("https://api.github.com/repos/Awakened-Redstone/fabric-mod-template/releases/latest", JsonObject.class, (jsonObject, code1) -> {
-            if (code1 != 200) {
-                setError("Failed to get the template info!");
+    private boolean getLicense(boolean sync) {
+        AtomicBoolean hasError = new AtomicBoolean(false);
+        setMessage("Getting license...");
+        String url = "https://api.github.com/licenses/" + licenseComboBox.getValue();
+        Path licensesPath = Constants.CACHE_PATH.resolve("licenses");
+        BiConsumer<JsonObject, Integer> consumer = (jsonObject, code) -> {
+            if (code != 200) {
+                setError("Could not get the license!");
                 hasError.set(true);
                 return;
             }
-
-            String tag_name = jsonObject.get("tag_name").getAsString();
-            if (Constants.getPersistentCache().templateVersion.equals(tag_name)) return;
-            else {
-                try {
-                    FileUtils.deleteDirectory(Constants.TEMPLATE_PATH.toFile());
-                } catch (IOException ignored) {}
-            }
-
-            JsonArray assets = jsonObject.get("assets").getAsJsonArray();
-            String downloadUrl = assets.get(0).getAsJsonObject().get("browser_download_url").getAsString();
-
+            setMessage("");
+            licenseContent = jsonObject.get("body").getAsString();
+            String spdx_id = jsonObject.get("spdx_id").getAsString();
+            Platform.runLater(() -> licenseComboBox.setValue(spdx_id));
             try {
-                UrlQuery.requestStreamSync(downloadUrl, (response, code) -> {
-                    if (code != 200) {
-                        setError("Failed to download the template!");
-                        hasError.set(true);
-                        return;
-                    }
-
-                    setMessage("Decompressing template...");
-
-                    try {
-                        Utils.unzip(response, Constants.TEMPLATE_PATH);
-                        setMessage("");
-
-                        Constants.getPersistentCache().templateVersion = tag_name;
-                    } catch (IOException e) {
-                        setError("Failed to unzip the template!");
-                        e.printStackTrace();
-                        hasError.set(true);
-                    } finally {
-                        try {
-                            response.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                setError("Failed to download the template!");
-                hasError.set(true);
+                if (!licensesPath.toFile().exists()) licensesPath.toFile().mkdirs();
+                Constants.getPersistentCache().licenses.add(spdx_id);
+                FileUtil.writeFile(licensesPath.resolve(spdx_id).toFile(), licenseContent);
+            } catch (IOException e) {
+                e.printStackTrace();
+                setError("Failed to cache license!");
             }
-        });
+        };
+        if (sync) UrlQuery.requestJsonSync(url, JsonObject.class, consumer);
+        else UrlQuery.requestJson(url, JsonObject.class, consumer);
 
-        Constants.CACHE_CONTROLLER.save();
-        return true;
+        Constants.CACHE_MANAGER.save();
+        return !hasError.get();
+    }
+
+    private String findLicense(String license) {
+        try {
+            Path licensesPath = Constants.CACHE_PATH.resolve("licenses");
+            return FileUtil.readFile(licensesPath.resolve(license).toFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private void getVersions(String url, String name, List<String> list, ComboBox<String> comboBox) {
@@ -349,11 +419,14 @@ public class FXMLController implements Initializable {
     }
 
     private void getLicenses() {
+        Path licensesPath = Constants.CACHE_PATH.resolve("licenses");
         UrlQuery.requestJson("https://api.github.com/licenses", JsonArray.class, (jsonArray, code) -> {
             licenseComboBox.setValue("");
             for (JsonElement jsonElement : jsonArray) {
                 JsonObject jsonObject = jsonElement.getAsJsonObject();
                 licenseComboBox.getItems().add(jsonObject.get("spdx_id").getAsString());
+
+
             }
         });
     }
@@ -451,8 +524,11 @@ public class FXMLController implements Initializable {
             targetPath.toFile().mkdirs();
             FileUtils.copyDirectory(parsePregenPath(GenerationType.JAVA).toFile(), targetPath.toFile());
 
-            SemanticVersionImpl newModIdVersion = new SemanticVersionImpl("0.59.0", false);
-            int i = new SemanticVersionImpl(apiVersionComboBox.getValue(), false).compareTo(newModIdVersion);
+            int i = 0;
+            if (StringUtils.isNotBlank(apiVersionComboBox.getValue())) {
+                SemanticVersionImpl newModIdVersion = new SemanticVersionImpl("0.59.0", false);
+                i = new SemanticVersionImpl(apiVersionComboBox.getValue(), false).compareTo(newModIdVersion);
+            }
 
             Map.Entry<String, String> MINECRAFT_VERSION = MapBuilder.createEntry("MINECRAFT_VERSION", minecraftVersionComboBox.getValue());
             Map.Entry<String, String> API_MOD_ID = MapBuilder.createEntry("API_MOD_ID", i >= 0 ? "fabric-api" : "fabric");
@@ -479,7 +555,7 @@ public class FXMLController implements Initializable {
             Map.Entry<String, String> GRADLE_VERSION = MapBuilder.createEntry("GRADLE_VERSION", gradleVersion);
 
             Path resourcesPath = targetPath.resolve("src/main/resources");
-            Path srcPath = targetPath.resolve(TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MAVEN_GROUP_PATH, ARCHIVES_BASE_NAME).build(), "src/main/java/${MAVEN_GROUP}/${ARCHIVES_BASE_NAME}"));
+            Path srcPath = parseSrc(GenerationType.JAVA, targetPath, MAVEN_GROUP_PATH, ARCHIVES_BASE_NAME);
 
             resourcesPath.toFile().mkdirs();
             srcPath.toFile().mkdirs();
@@ -488,7 +564,7 @@ public class FXMLController implements Initializable {
             generateFile(GenerationType.JAVA, "gradle.properties.ft", targetPath.resolve("gradle.properties"), MINECRAFT_VERSION, LOADER_VERSION, YARN_VERSION, API_VERSION, MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_VERSION);
             generateFile(GenerationType.JAVA, "gradle-wrapper.properties.ft", targetPath.resolve("gradle/wrapper/gradle-wrapper.properties"), GRADLE_VERSION);
             String mixinPath = TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "${MOD_ID}.mixins.json");
-            generateFile(GenerationType.JAVA, "mixins.json.ft", targetPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
+            generateFile(GenerationType.JAVA, "mixins.json.ft", resourcesPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
             generateFile(GenerationType.JAVA, "ModMain.java.ft", srcPath.resolve(mainClassNameTextField.getText() + ".java"), MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
             generateIcon(GenerationType.JAVA, modIdTextField.getText(), resourcesPath);
 
@@ -496,8 +572,8 @@ public class FXMLController implements Initializable {
                 setMessage("Generating fabric.mod.json");
                 File file = resourcesPath.resolve("fabric.mod.json").toFile();
                 String template = FileUtil.readFile(parseTemplatePath(GenerationType.JAVA).resolve("fabric.mod.json.ft").toFile());
-                MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(API_MOD_ID, API_VERSION, MOD_ID, MAVEN_GROUP, ARCHIVES_BASE_NAME, MAIN_CLASS,
-                        LOADER_VERSION, MINECRAFT_VERSION, MOD_DESCRIPTION, MOD_NAME, LICENSE, HOMEPAGE, SOURCES);
+                MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(MOD_ID, MAVEN_GROUP, ARCHIVES_BASE_NAME, MAIN_CLASS, LOADER_VERSION, MINECRAFT_VERSION, MOD_DESCRIPTION, MOD_NAME, LICENSE, HOMEPAGE, SOURCES);
+                if (StringUtils.isNotBlank(apiVersionComboBox.getValue())) mapBuilder.put(API_MOD_ID, API_VERSION);
                 String generatedTemplate = TemplateManager.generateTemplate(mapBuilder.build(), template);
                 JsonObject jsonObject = JsonParser.parseString(generatedTemplate).getAsJsonObject();
                 if (StringUtils.isNotBlank(authorsTextField.getText())) {
@@ -538,8 +614,11 @@ public class FXMLController implements Initializable {
             targetPath.toFile().mkdirs();
             FileUtils.copyDirectory(parsePregenPath(GenerationType.KOTLIN).toFile(), targetPath.toFile());
 
-            SemanticVersionImpl newModIdVersion = new SemanticVersionImpl("0.59.0", false);
-            int i = new SemanticVersionImpl(apiVersionComboBox.getValue(), false).compareTo(newModIdVersion);
+            int i = 0;
+            if (StringUtils.isNotBlank(apiVersionComboBox.getValue())) {
+                SemanticVersionImpl newModIdVersion = new SemanticVersionImpl("0.59.0", false);
+                i = new SemanticVersionImpl(apiVersionComboBox.getValue(), false).compareTo(newModIdVersion);
+            }
 
             Map.Entry<String, String> MINECRAFT_VERSION = MapBuilder.createEntry("MINECRAFT_VERSION", minecraftVersionComboBox.getValue());
             Map.Entry<String, String> API_MOD_ID = MapBuilder.createEntry("API_MOD_ID", i >= 0 ? "fabric-api" : "fabric");
@@ -569,7 +648,7 @@ public class FXMLController implements Initializable {
             Map.Entry<String, String> KOTLIN_VERSION = MapBuilder.createEntry("KOTLIN_VERSION", kotlinData.kotlinVersion());
 
             Path resourcesPath = targetPath.resolve("src/main/resources");
-            Path srcPath = targetPath.resolve(TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MAVEN_GROUP_PATH, ARCHIVES_BASE_NAME).build(), "src/main/java/${MAVEN_GROUP}/${ARCHIVES_BASE_NAME}"));
+            Path srcPath = parseSrc(GenerationType.KOTLIN, targetPath, MAVEN_GROUP_PATH, ARCHIVES_BASE_NAME);
 
             resourcesPath.toFile().mkdirs();
             srcPath.toFile().mkdirs();
@@ -578,7 +657,7 @@ public class FXMLController implements Initializable {
             generateFile(GenerationType.KOTLIN, "gradle.properties.ft", targetPath.resolve("gradle.properties"), MINECRAFT_VERSION, LOADER_VERSION, YARN_VERSION, API_VERSION, MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_VERSION, KOTLIN_VERSION, FABRIC_KOTLIN_VERSION);
             generateFile(GenerationType.KOTLIN, "gradle-wrapper.properties.ft", targetPath.resolve("gradle/wrapper/gradle-wrapper.properties"), GRADLE_VERSION);
             String mixinPath = TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "${MOD_ID}.mixins.json");
-            generateFile(GenerationType.KOTLIN, "mixins.json.ft", targetPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
+            generateFile(GenerationType.KOTLIN, "mixins.json.ft", resourcesPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
             generateFile(GenerationType.KOTLIN, "ModMain.kt.ft", srcPath.resolve(mainClassNameTextField.getText() + ".kt"), MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
             generateIcon(GenerationType.KOTLIN, modIdTextField.getText(), resourcesPath);
 
@@ -586,7 +665,8 @@ public class FXMLController implements Initializable {
                 setMessage("Generating fabric.mod.json");
                 File file = resourcesPath.resolve("fabric.mod.json").toFile();
                 String template = FileUtil.readFile(parseTemplatePath(GenerationType.KOTLIN).resolve("fabric.mod.json.ft").toFile());
-                MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(API_MOD_ID, API_VERSION, MOD_ID, MAVEN_GROUP, ARCHIVES_BASE_NAME, MAIN_CLASS, LOADER_VERSION, MINECRAFT_VERSION, MOD_DESCRIPTION, MOD_NAME, LICENSE, HOMEPAGE, SOURCES, KOTLIN_VERSION, FABRIC_KOTLIN_VERSION);
+                MapBuilder<String, String> mapBuilder = new MapBuilder<String, String>().put(MOD_ID, MAVEN_GROUP, ARCHIVES_BASE_NAME, MAIN_CLASS, LOADER_VERSION, MINECRAFT_VERSION, MOD_DESCRIPTION, MOD_NAME, LICENSE, HOMEPAGE, SOURCES, KOTLIN_VERSION, FABRIC_KOTLIN_VERSION);
+                if (StringUtils.isNotBlank(apiVersionComboBox.getValue())) mapBuilder.put(API_MOD_ID, API_VERSION);
                 String generatedTemplate = TemplateManager.generateTemplate(mapBuilder.build(), template);
                 JsonObject jsonObject = JsonParser.parseString(generatedTemplate).getAsJsonObject();
                 if (StringUtils.isNotBlank(authorsTextField.getText())) {
@@ -610,6 +690,12 @@ public class FXMLController implements Initializable {
         }
 
         return true;
+    }
+
+    @SafeVarargs
+    public final Path parseSrc(GenerationType type, Path targetPath, Map.Entry<String, String>... entries) {
+        String ending = TemplateManager.generateTemplate(new MapBuilder<String, String>().put(entries).build(), "/${MAVEN_GROUP}/${ARCHIVES_BASE_NAME}");
+        return targetPath.resolve("src/main/" + type.name().toLowerCase() + ending);
     }
 
     public Path parseTemplatePath(GenerationType type) {
@@ -714,7 +800,7 @@ public class FXMLController implements Initializable {
 
             if (!cancelled.get()) {
                 Constants.getPersistentCache().generationPath = parsePath(input.getText());
-                Constants.CACHE_CONTROLLER.save();
+                Constants.CACHE_MANAGER.save();
             }
 
             return cancelled.get() ? null : parsePath(input.getText() + File.separator + modName);
