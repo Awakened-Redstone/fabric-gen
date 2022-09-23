@@ -1,13 +1,14 @@
-package com.awakenedredstone.util;
+package com.awakenedredstone.fabrigen.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class FileUtil {
-
     public static String readFile(File file) throws IOException {
         if (file.isDirectory()) throw new IOException("File must not be a directory!");
         FileInputStream inputStream = new FileInputStream(file);

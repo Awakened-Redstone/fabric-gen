@@ -10,7 +10,7 @@
         <VBox prefHeight="200.0" prefWidth="100.0">
             <HBox alignment="CENTER" prefHeight="100.0" prefWidth="2147483647">
                 <children>
-                    <TextField fx:id="folderLocation" promptText="Loading..." prefWidth="2147483647" maxWidth="Infinity" />
+                    <TextField fx:id="folderLocation" prefWidth="2147483647" maxWidth="Infinity" />
                     <Button text="..." />
                 </children>
             </HBox>

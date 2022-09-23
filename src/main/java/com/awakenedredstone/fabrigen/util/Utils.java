@@ -1,20 +1,16 @@
-package com.awakenedredstone.util;
+package com.awakenedredstone.fabrigen.util;
 
-import com.awakenedredstone.FXMLController;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
+import com.awakenedredstone.fabrigen.FXMLController;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class Utils {
-
     public static void unzip(InputStream stream, Path destDir) throws IOException {
         File dir = destDir.toFile();
         // create output directory if it doesn't exist

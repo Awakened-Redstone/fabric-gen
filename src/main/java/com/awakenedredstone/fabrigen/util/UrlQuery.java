@@ -1,6 +1,6 @@
-package com.awakenedredstone.util;
+package com.awakenedredstone.fabrigen.util;
 
-import com.awakenedredstone.Main;
+import com.awakenedredstone.fabrigen.Constants;
 import com.google.gson.JsonElement;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
@@ -11,17 +11,16 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 public class UrlQuery {
-
     public static void requestJson(String url, BiConsumer<JsonElement, Integer> consumer) {
         HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
 
-        Main.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
+        Constants.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseBody = Objects.requireNonNull(response.body()).string();
-                consumer.accept(Main.GSON.fromJson(responseBody, JsonElement.class), response.code());
+                consumer.accept(Constants.GSON.fromJson(responseBody, JsonElement.class), response.code());
             }
 
             @Override
@@ -35,12 +34,12 @@ public class UrlQuery {
         HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
 
-        Main.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
+        Constants.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseBody = Objects.requireNonNull(response.body()).string();
-                consumer.accept(Main.GSON.fromJson(responseBody, clazz), response.code());
+                consumer.accept(Constants.GSON.fromJson(responseBody, clazz), response.code());
             }
 
             @Override
@@ -55,9 +54,9 @@ public class UrlQuery {
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
 
         try {
-            Response response = Main.OK_HTTP_CLIENT.newCall(request).execute();
+            Response response = Constants.OK_HTTP_CLIENT.newCall(request).execute();
             String responseBody = Objects.requireNonNull(response.body()).string();
-            consumer.accept(Main.GSON.fromJson(responseBody, clazz), response.code());
+            consumer.accept(Constants.GSON.fromJson(responseBody, clazz), response.code());
         } catch (IOException e) {
             consumer.accept(null, -1);
             e.printStackTrace();
@@ -69,7 +68,7 @@ public class UrlQuery {
         HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
         Request request = new Request.Builder().url(urlBuilder.build().toString()).build();
 
-        Main.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
+        Constants.OK_HTTP_CLIENT.newCall(request).enqueue(new Callback() {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
@@ -89,7 +88,7 @@ public class UrlQuery {
 
         Response response = null;
         try {
-            response = Main.OK_HTTP_CLIENT.newCall(request).execute();
+            response = Constants.OK_HTTP_CLIENT.newCall(request).execute();
             consumer.accept(Objects.requireNonNull(response.body()).byteStream(), response.code());
         } catch (IOException e) {
             consumer.accept(null, -1);

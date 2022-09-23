@@ -1,4 +1,4 @@
-package com.awakenedredstone.util;
+package com.awakenedredstone.fabrigen.util;
 
 import java.util.HashMap;
 import java.util.Map;

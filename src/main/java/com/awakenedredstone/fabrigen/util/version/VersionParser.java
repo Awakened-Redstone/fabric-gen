@@ -1,4 +1,4 @@
-package com.awakenedredstone.util.version;
+package com.awakenedredstone.fabrigen.util.version;
 
 public final class VersionParser {
 	public static Version parse(String s, boolean storeX) throws VersionParsingException {

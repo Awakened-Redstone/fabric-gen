@@ -1,6 +1,6 @@
-package com.awakenedredstone.util;
+package com.awakenedredstone.fabrigen.util;
 
-import com.awakenedredstone.Main;
+import com.awakenedredstone.fabrigen.Constants;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -39,7 +39,7 @@ public class JsonHelper {
 
         try {
             writer = new FileWriter(file);
-            writer.write(Main.GSON.toJson(root));
+            writer.write(Constants.GSON.toJson(root));
             writer.close();
 
             return true;
