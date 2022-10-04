@@ -14,7 +14,11 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class JavaFX extends Application {
@@ -94,11 +98,15 @@ public class JavaFX extends Application {
         }
 
         private String buildStackTrace(Throwable throwable) {
-            StringBuilder builder = new StringBuilder(throwable.getMessage()).append("\n");
-            for (StackTraceElement traceElement : throwable.getStackTrace())
-                builder.append("\tat ").append(traceElement).append("\n");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream out = new PrintStream(baos);
 
-            return builder.toString();
+            throwable.printStackTrace(out);
+            ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+            int n = in.available();
+            byte[] bytes = new byte[n];
+            in.read(bytes, 0, n);
+            return new String(bytes, StandardCharsets.UTF_8);
         }
     }
 }

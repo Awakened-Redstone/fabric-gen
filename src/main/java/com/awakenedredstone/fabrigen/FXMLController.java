@@ -565,7 +565,7 @@ public class FXMLController implements Initializable {
             generateFile(GenerationType.JAVA, "gradle-wrapper.properties.ft", targetPath.resolve("gradle/wrapper/gradle-wrapper.properties"), GRADLE_VERSION);
             String mixinPath = TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "${MOD_ID}.mixins.json");
             generateFile(GenerationType.JAVA, "mixins.json.ft", resourcesPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
-            generateFile(GenerationType.JAVA, "ModMain.java.ft", srcPath.resolve(mainClassNameTextField.getText() + ".java"), MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
+            generateFile(GenerationType.JAVA, "ModMain.java.ft", srcPath.resolve(mainClassNameTextField.getText() + ".java"), MAIN_CLASS, MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
             generateIcon(GenerationType.JAVA, modIdTextField.getText(), resourcesPath);
 
             {
@@ -658,7 +658,7 @@ public class FXMLController implements Initializable {
             generateFile(GenerationType.KOTLIN, "gradle-wrapper.properties.ft", targetPath.resolve("gradle/wrapper/gradle-wrapper.properties"), GRADLE_VERSION);
             String mixinPath = TemplateManager.generateTemplate(new MapBuilder<String, String>().put(MOD_ID).build(), "${MOD_ID}.mixins.json");
             generateFile(GenerationType.KOTLIN, "mixins.json.ft", resourcesPath.resolve(mixinPath), MAVEN_GROUP, ARCHIVES_BASE_NAME, JAVA_VERSION);
-            generateFile(GenerationType.KOTLIN, "ModMain.kt.ft", srcPath.resolve(mainClassNameTextField.getText() + ".kt"), MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
+            generateFile(GenerationType.KOTLIN, "ModMain.kt.ft", srcPath.resolve(mainClassNameTextField.getText() + ".kt"), MAIN_CLASS, MAVEN_GROUP, ARCHIVES_BASE_NAME, MOD_ID);
             generateIcon(GenerationType.KOTLIN, modIdTextField.getText(), resourcesPath);
 
             {
