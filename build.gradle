@@ -30,7 +30,7 @@ dependencies {
     implementation "org.openjfx:javafx-controls:17.0.2:linux"
     implementation "org.openjfx:javafx-fxml:17.0.2:linux"
 
-    runtimeOnly "org.openjfx:javafx-graphics:17.0.2:mac"
+    implementation "org.openjfx:javafx-graphics:17.0.2:mac"
     implementation "org.openjfx:javafx-base:17.0.2:mac"
     implementation "org.openjfx:javafx-controls:17.0.2:mac"
     implementation "org.openjfx:javafx-fxml:17.0.2:mac"
