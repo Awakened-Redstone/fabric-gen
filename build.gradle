@@ -1,12 +1,11 @@
 plugins {
     id 'java'
     id 'idea'
-    //id 'org.openjfx.javafxplugin' version '0.0.10'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group 'com.awakenedredstone'
-version '1.1.0'
+version '1.1.1'
 
 repositories {
     mavenCentral()
@@ -21,29 +20,21 @@ dependencies {
     implementation 'org.apache.velocity:velocity:1.7'
     implementation 'org.apache.velocity:velocity-tools:2.0'
 
-    implementation 'org.openjfx:javafx-base:17.0.2'
-    implementation 'org.openjfx:javafx-controls:17.0.2'
-
-    implementation 'org.openjfx:javafx-base:17.0.2:win'
-    implementation 'org.openjfx:javafx-controls:17.0.2:win'
-    implementation 'org.openjfx:javafx-fxml:17.0.2:win'
     implementation "org.openjfx:javafx-graphics:17.0.2:win"
+    implementation "org.openjfx:javafx-base:17.0.2:win"
+    implementation "org.openjfx:javafx-controls:17.0.2:win"
+    implementation "org.openjfx:javafx-fxml:17.0.2:win"
 
-    implementation 'org.openjfx:javafx-base:17.0.2:linux'
-    implementation 'org.openjfx:javafx-controls:17.0.2:linux'
-    implementation 'org.openjfx:javafx-fxml:17.0.2:linux'
     implementation "org.openjfx:javafx-graphics:17.0.2:linux"
+    implementation "org.openjfx:javafx-base:17.0.2:linux"
+    implementation "org.openjfx:javafx-controls:17.0.2:linux"
+    implementation "org.openjfx:javafx-fxml:17.0.2:linux"
 
-    implementation 'org.openjfx:javafx-base:17.0.2:mac'
-    implementation 'org.openjfx:javafx-controls:17.0.2:mac'
-    implementation 'org.openjfx:javafx-fxml:17.0.2:mac'
     implementation "org.openjfx:javafx-graphics:17.0.2:mac"
+    implementation "org.openjfx:javafx-base:17.0.2:mac"
+    implementation "org.openjfx:javafx-controls:17.0.2:mac"
+    implementation "org.openjfx:javafx-fxml:17.0.2:mac"
 }
-
-/*javafx {
-    version = '17.0.2'
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
-}*/
 
 shadowJar {
     archiveClassifier.set('all')
