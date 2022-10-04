@@ -1,17 +1,13 @@
 package com.awakenedredstone.fabrigen;
 
-import org.apache.commons.configuration2.plist.SimpleCharStream;
-import org.apache.velocity.runtime.parser.CharStream;
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Wrapper {
     public static void main(String[] args) {
