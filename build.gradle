@@ -40,6 +40,6 @@ build.dependsOn shadowJar
 
 jar {
     manifest {
-        attributes "Main-Class": 'com.awakenedredstone.newcode.Wrapper'
+        attributes "Main-Class": 'com.awakenedredstone.fabrigen.Wrapper'
     }
 }
