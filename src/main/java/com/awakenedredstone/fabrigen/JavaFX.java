@@ -1,19 +1,25 @@
 package com.awakenedredstone.fabrigen;
 
 import javafx.application.Application;
+import javafx.event.EventType;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -88,10 +94,20 @@ public class JavaFX extends Application {
                 VBox vBox = (VBox) rootVBox.getChildren().get(0);
                 Label message = (Label) vBox.getChildren().get(0);
                 TextArea textArea = (TextArea) vBox.getChildren().get(1);
+                Button button = (Button) vBox.getChildren().get(3);
 
+                message.setTextFill(Color.RED);
                 message.setText(this.message);
-                if (throwable != null) textArea.setText(buildStackTrace(throwable));
-                else textArea.setText("");
+                throwable.printStackTrace();
+                textArea.setText(readLogs());
+
+                button.setOnAction(event -> {
+                    StringSelection selection = new StringSelection(readLogs());
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(selection, selection);
+                    button.setText("Logs copied!");
+                    button.setTextFill(Color.GREEN);
+                });
 
                 stage.setScene(scene);
                 stage.showAndWait();
@@ -99,13 +115,8 @@ public class JavaFX extends Application {
             }
         }
 
-        private String buildStackTrace(Throwable throwable) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PrintStream out = new PrintStream(baos);
-
-            throwable.printStackTrace();
-            throwable.printStackTrace(out);
-            ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+        public String readLogs() {
+            ByteArrayInputStream in = new ByteArrayInputStream(Wrapper.outputStream.toByteArray());
             int n = in.available();
             byte[] bytes = new byte[n];
             in.read(bytes, 0, n);
