@@ -119,8 +119,14 @@ public class FXMLController implements Initializable {
     }
 
     private void generateTemplate() {
-        Constants.SETTINGS_MANAGER.safeLoadOrCreateSetting();
-        Constants.CACHE_MANAGER.safeLoadOrCreateCache();
+        if (!Constants.SETTINGS_MANAGER.safeLoadOrCreateSetting()) {
+            setError("Invalid settings!");
+            return;
+        }
+        if (!Constants.CACHE_MANAGER.safeLoadOrCreateCache()) {
+            setError("Invalid cache!");
+            return;
+        }
         AtomicBoolean hasError = new AtomicBoolean(false);
         setMessage("");
 
@@ -139,7 +145,7 @@ public class FXMLController implements Initializable {
                 }
             } catch (ExecutionException | InterruptedException e) {
                 setError("An unknown error occurred when getting the kotlin info!");
-                e.printStackTrace();
+                Platform.runLater(new JavaFX.ErrorWindow(message.getScene().getWindow(), "An unknown error occurred when getting the kotlin info!", e));
                 return;
             }
         }
@@ -166,7 +172,7 @@ public class FXMLController implements Initializable {
             }
         } catch (ExecutionException | InterruptedException | IOException e) {
             setError("An unknown error occurred when checking the generation location!");
-            e.printStackTrace();
+            Platform.runLater(new JavaFX.ErrorWindow(message.getScene().getWindow(), "An unknown error occurred when checking the generation location!", e));
             return;
         }
 
