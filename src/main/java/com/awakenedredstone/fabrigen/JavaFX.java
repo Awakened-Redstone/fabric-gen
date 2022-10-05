@@ -52,6 +52,8 @@ public class JavaFX extends Application {
         } else if (!settingsLoaded) {
             new ErrorWindow(scene.getWindow(), "Failed to load settings!", throwable).run();
         }
+
+        Wrapper.startingPopup.setVisible(false);
     }
 
     public static void init(String[] args) {
@@ -101,6 +103,7 @@ public class JavaFX extends Application {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream out = new PrintStream(baos);
 
+            throwable.printStackTrace();
             throwable.printStackTrace(out);
             ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
             int n = in.available();
