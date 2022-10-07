@@ -1,8 +1,5 @@
 package com.awakenedredstone.fabrigen;
 
-import javafx.application.Platform;
-import javafx.scene.image.Image;
-import javafx.stage.Screen;
 import org.apache.commons.io.output.TeeOutputStream;
 
 import javax.imageio.ImageIO;
@@ -12,22 +9,23 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 public class Wrapper {
     public static final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     public static JFrame startingPopup;
 
     public static void main(String[] args) {
-        TeeOutputStream teeStream = new TeeOutputStream(outputStream, System.out);
-        PrintStream out = new PrintStream(teeStream, true);
+        TeeOutputStream outStream = new TeeOutputStream(outputStream, System.out);
+        TeeOutputStream errStream = new TeeOutputStream(outputStream, System.err);
+        PrintStream out = new PrintStream(outStream, true);
+        PrintStream err = new PrintStream(errStream, true);
         System.setOut(out);
-        System.setErr(out);
+        System.setErr(err);
+        startingPopup = startingPopup();
         try {
-            startingPopup = startingPopup();
+            System.out.println("============= Ignore the JavaFX warning. =============");
             JavaFX.init(args);
         } catch (Exception e) {
             JFrame frame = new JFrame();
@@ -51,9 +49,13 @@ public class Wrapper {
 
             panel.add(textArea);
 
+            try {
+                frame.setIconImage(ImageIO.read(Wrapper.class.getResourceAsStream("icon.png")));
+            } catch (Exception ignored) {};
+
             frame.setMinimumSize(new Dimension(560, 360));
             frame.setSize(new Dimension(560, 360));
-            frame.setTitle("FabriGen console");
+            frame.setTitle("FabriGen logs");
             frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
             frame.addComponentListener(new ComponentAdapter() {
@@ -64,6 +66,7 @@ public class Wrapper {
 
             frame.add(panel);
             frame.setVisible(true);
+            startingPopup.setVisible(false);
         }
     }
 
@@ -88,7 +91,7 @@ public class Wrapper {
         frame.add(panel);
         try {
             frame.setIconImage(ImageIO.read(Wrapper.class.getResourceAsStream("icon.png")));
-        } catch (IOException ignored) {};
+        } catch (Exception ignored) {};
         frame.setVisible(true);
         return frame;
     }
