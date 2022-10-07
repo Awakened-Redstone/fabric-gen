@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.*?><?import javafx.scene.control.*?><?import javafx.scene.layout.*?>
 
+<?import com.awakenedredstone.fabrigen.util.LoadableComboBox?>
 <VBox fx:id="mainVBox" alignment="CENTER" prefHeight="739.0" prefWidth="689.0" spacing="20.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.awakenedredstone.fabrigen.FXMLController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
@@ -48,7 +49,7 @@
                         <Label text="Sources" GridPane.rowIndex="13" />
                         <Label text="License *" GridPane.rowIndex="14" />
                         <Label text="Kotlin Template" GridPane.rowIndex="15" />
-                        <ComboBox fx:id="minecraftVersionComboBox" editable="true" onAction="#onMinecraftVersionComboBoxAction" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" />
+                        <LoadableComboBox fx:id="minecraftVersionComboBox" editable="true" onAction="#onMinecraftVersionComboBoxAction" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" />
                         <ComboBox fx:id="apiVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <ComboBox fx:id="loomVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                         <ComboBox fx:id="loaderVersionComboBox" editable="true" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
@@ -62,7 +63,7 @@
                         <TextField fx:id="authorsTextField" promptText="Author 1, Author 2, Author 3..." GridPane.columnIndex="1" GridPane.rowIndex="11" />
                         <TextField fx:id="homepageTextField" promptText="https://..." GridPane.columnIndex="1" GridPane.rowIndex="12" />
                         <TextField fx:id="sourcesTextField" promptText="https://..." GridPane.columnIndex="1" GridPane.rowIndex="13" />
-                        <ComboBox fx:id="licenseComboBox" editable="true" onAction="#onLicenseComboBoxAction" maxWidth="1.7976931348623157E308" prefWidth="150.0" promptText="MIT" GridPane.columnIndex="1" GridPane.rowIndex="14" />
+                        <LoadableComboBox fx:id="licenseComboBox" editable="true" onAction="#onLicenseComboBoxAction" maxWidth="1.7976931348623157E308" prefWidth="150.0" promptText="MIT" GridPane.columnIndex="1" GridPane.rowIndex="14" />
                         <CheckBox fx:id="kotlinTemplate" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="15" />
                     </children>
                 </GridPane>

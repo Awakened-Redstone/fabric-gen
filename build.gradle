@@ -37,6 +37,9 @@ dependencies {
 }
 
 shadowJar {
+    minimize {
+        exclude(dependency('org.openjfx:.*:.*'))
+    }
     archiveClassifier.set('all')
     archiveVersion.set(version)
 }

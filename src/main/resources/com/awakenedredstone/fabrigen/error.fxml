@@ -9,5 +9,7 @@
     <VBox prefHeight="300.0" prefWidth="100.0" maxHeight="10000">
         <Label text="Unknown error" />
         <TextArea text="Missing stacktrace" editable="false" prefHeight="250" prefWidth="420" minWidth="-Infinity" minHeight="-Infinity"/>
+        <Label />
+        <Button text="Copy logs" />
     </VBox>
 </VBox>
