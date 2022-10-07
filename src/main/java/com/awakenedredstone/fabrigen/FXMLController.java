@@ -599,7 +599,7 @@ public class FXMLController implements Initializable {
             setMessage("");
         } catch (Exception e) {
             setError("Failed to generate mod!");
-            e.printStackTrace();
+            Platform.runLater(new JavaFX.ErrorWindow(message.getScene().getWindow(), "Failed to generate mod!", e));
             return false;
         }
 
