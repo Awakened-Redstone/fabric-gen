@@ -61,7 +61,7 @@ public class FXMLController implements Initializable {
     public String yarnVersion;
     public String generationPath;
 
-    @FXML public ComboBox<String> minecraftVersionComboBox;
+    @FXML public LoadableComboBox<String> minecraftVersionComboBox;
     @FXML public ComboBox<String> apiVersionComboBox;
     @FXML public ComboBox<String> loomVersionComboBox;
     @FXML public ComboBox<String> loaderVersionComboBox;
@@ -76,7 +76,7 @@ public class FXMLController implements Initializable {
     @FXML public TextField authorsTextField;
     @FXML public TextField homepageTextField;
     @FXML public TextField sourcesTextField;
-    @FXML public ComboBox<String> licenseComboBox;
+    @FXML public LoadableComboBox<String> licenseComboBox;
     @FXML public CheckBox kotlinTemplate;
 
     @FXML public Label message;
@@ -97,10 +97,12 @@ public class FXMLController implements Initializable {
     }
 
     public void onMinecraftVersionComboBoxAction(ActionEvent event) {
+        if (!minecraftVersionComboBox.isLoaded()) return;
         getYarn(false);
     }
 
     public void onLicenseComboBoxAction(ActionEvent event) {
+        if (!licenseComboBox.isLoaded()) return;
         setMessage("");
         if (Constants.getPersistentCache().licenses.contains(licenseComboBox.getValue())) {
             licenseContent = findLicense(licenseComboBox.getValue());
@@ -425,14 +427,12 @@ public class FXMLController implements Initializable {
     }
 
     private void getLicenses() {
-        Path licensesPath = Constants.CACHE_PATH.resolve("licenses");
         UrlQuery.requestJson("https://api.github.com/licenses", JsonArray.class, (jsonArray, code) -> {
             licenseComboBox.setValue("");
+            licenseComboBox.setLoaded();
             for (JsonElement jsonElement : jsonArray) {
                 JsonObject jsonObject = jsonElement.getAsJsonObject();
                 licenseComboBox.getItems().add(jsonObject.get("spdx_id").getAsString());
-
-
             }
         });
     }
@@ -446,6 +446,7 @@ public class FXMLController implements Initializable {
                 minecraftVersions.add(jsonObject.get("version").getAsString());
             }
 
+            minecraftVersionComboBox.setLoaded();
             minecraftVersionComboBox.getItems().addAll(stableMinecraftVersions);
             minecraftVersionComboBox.setValue(stableMinecraftVersions.get(0));
         });
